@@ -32,7 +32,7 @@ from os.path import exists
 version = "0.2.2021.Release (\033[1;30;mC\033[1;31;mo\033[1;32;ml\033[1;33;mo\033[1;34;mr\033[1;35;mf\033[1;36;mu\033[1;37;ml\033[0m Times)"
 
 # Supported Executable Commands (Not Special Commands).
-cmds = {"clear": "Clear Screen.", "exit": "Exit This Program.", "logout": "Exit This Program", "data": "Undefined.", "shift": "Undefined.", "virsual": "Undefined.", "print": "Undefined.", "restart": "Soft-Restart This Program.", "goto": "Undefined.", "tp": "Undefined.", "cd": "Toggle The Working Directory.", "reboot": "Soft-Restart This Program.", "ls": "List The Contents of The Current Directory.", "dir": "List The Contents of The Current Directory.", "cat": "Display The Specified Text File Contents.", "uname": "Display The Virtual Operating System Type.", "pwd": "Display The Current Working Directory.", "tty": "Display The Current Terminal Storage Location.", "wget": "Download Files On The Internet.", "ping": "Test Network Connectivity.", "python": "Execute Python Scripts Or Shell.", "do": "Provide A Statement Loop (In \"loop 'times'\" End).", "help": "Display This Help Message.", "exec": "Execute Commands With Default-Shell.", "raise": "Manually Throw A System-Exception."}
+cmds = {"clear": "Clear Screen.", "exit": "Exit This Program.", "logout": "Exit This Program", "data": "Undefined.", "shift": "Undefined.", "virsual": "Undefined.", "print": "Undefined.", "restart": "Soft-Restart This Program.", "goto": "Undefined.", "tp": "Undefined.", "cd": "Toggle The Working Directory.", "reboot": "Soft-Restart This Program.", "ls": "List The Contents of The Current Directory.", "dir": "List The Contents of The Current Directory.", "cat": "Display The Specified Text File Contents.", "uname": "Display The Virtual Operating System Type.", "pwd": "Display The Current Working Directory.", "tty": "Display The Current Terminal Storage Location.", "wget": "Download Files On The Internet.", "ping": "Test Network Connectivity.", "python": "Execute Python Scripts Or Shell.", "do": "Provide A Statement Loop (In \"loop 'times'\" End).", "hostname": "Display The Host Name.", "username": "Display The User Name.", "passwd": "Change User's Password.", "help": "Display This Help Message.", "exec": "Execute Commands With Default-Shell.", "raise": "Manually Throw A System-Exception."}
 # Emergency Default Usernames And The MD5 Code Of Passwords.
 users = {'logic': '6fad807c0f7e970c379a8b6393e22501', 'administrator': 'd41d8cd98f00b204e9800998ecf8427e'}
 path2py = ''
@@ -147,7 +147,7 @@ def execute(cmd):
         exit(0)
     elif unit == "login":
         print()
-        login()
+        login(isForever = False)
         return ''
     elif (unit == "reboot") or (unit == "restart"):
         clear()
@@ -187,7 +187,7 @@ def execute(cmd):
     elif unit == "tty":
         return "/dev/tty0 Python-3-Virtual\n"
     elif unit == "su":
-        if cmd == "su":
+        if cmd.lower() == "su":
             usern = "root"
         else:
             usern = cmd[3:]
@@ -263,10 +263,30 @@ def execute(cmd):
                     print(execute(each), end = '')
                     bars += 1
         return "\033[1;32;mExecute Command %d Bar(s).\n\033[0m" % bars
+    elif unit == "hostname":
+        if cmd.lower() == "hostname":
+            return gethostname() + '\n'
+        else:
+            return "\033[1;31;mModifying Host Name Is Not Supported.\033[0m\n"
+    elif unit == "username":        
+        return username + '\n'
+    elif unit == "passwd":
+        old_passwd = getpass("\033[1;;mOld Password: \033[0m")
+        if (username in users) and (md5(old_passwd.encode('utf-8')).hexdigest() == users[username]):
+            new_passwd = getpass("\033[1;;mSet %s's Password: \033[0m" % username)
+            new_passwd_again = getpass("\033[1;;mType Password Again: \033[0m")
+            if not (new_passwd == new_passwd_again):
+                return "\n\033[1;31;mPasswords Are Inconsistent.\n\033[0m\n"
+            else:
+                users[username] = md5(new_passwd.encode('utf-8')).hexdigest()
+                save_users()
+                return ''
+        else:
+            return "\033[1;31;mUsername Or Password Is Incorrect.\n\033[0m"
     elif unit == "raise":
-        if cmd == "raise":
+        if cmd.lower() == "raise":
             raise Exception("Exception Thrown By The User.")
-        elif cmd == "raise NameError":
+        elif cmd[6:] == "NameError":
             raise NameError("Exception Thrown By The User.")
         else:
             try:
@@ -294,32 +314,41 @@ E.O.F.
 print("\033[1;;mLogicOS %s\nKernel- Not Mounted\033[0m\n\nCopyright (c) 2020-2021 Littlebox.\nAll Rights Reserved.\n" % version)
 
 # Register & Log in.
-def login():
+def login(isForever = True):
     """Doc:
-    Used To Handle User Login Operations. 
+    Used To Handle User Login )Operations. 
     No Parameters Are Required.
     """
     global username
     print("\033[1;32;mType \"register\" To Register New Accounts\n\033[0m")
     while True:
-        username = input("\033[1;;mLogin: \033[0m")
-        if username.lower() == 'register':
-            username = input("\033[1;;mUsername: \033[0m")
-            if username in users:
-                print("\033[1;31;mAccount \"%s\" Already Exists!\n\033[0m" % username.title())
-                continue
-            passwd = getpass("\033[1;;mSet %s's Password: \033[0m" % username)
+        usernamex = input("\033[1;;mLogin: \033[0m")
+        if usernamex.lower() == 'register':
+            usernamex = input("\033[1;;mUsername: \033[0m")
+            if usernamex in users:
+                print("\033[1;31;mAccount \"%s\" Already Exists!\n\033[0m" % usernamex.title())
+                if isForever:
+                    continue
+                else:
+                    break
+            passwd = getpass("\033[1;;mSet %s's Password: \033[0m" % usernamex)
             passwd_again = getpass("\033[1;;mType Password Again: \033[0m")
             if not passwd == passwd_again:
                 print("\n\033[1;31;mPasswords Are Inconsistent\n\033[0m")
-                continue
-            users[username] = md5(passwd.encode('utf-8')).hexdigest()
+                if isForever:
+                    continue
+                else:
+                    break
+            users[usernamex] = md5(passwd.encode('utf-8')).hexdigest()
             save_users()
             print("\033[1;32;mRegistered\nLog In Now!\n\033[0m")
-            continue
-        passwd = getpass("\033[1;;m" + username + "@localhost's Password: \033[0m")
-        if (username in users) and (md5(passwd.encode('utf-8')).hexdigest() == users[username]):
-            print("\n\033[1;34;mWelcome Home, %s." % username.title())
+            if isForever:
+                continue
+            else:
+                break
+        passwd = getpass("\033[1;;m" + usernamex + "@localhost's Password: \033[0m")
+        if (usernamex in users) and (md5(passwd.encode('utf-8')).hexdigest() == users[usernamex]):
+            print("\n\033[1;34;mWelcome Home, %s." % usernamex.title())
             if int(datetime.now().strftime('%H')) < 6:
                 hello = "Early hours of the new day, 加班有度, 减少劳累吧..."
             elif int(datetime.now().strftime('%H')) < 11:
@@ -332,10 +361,15 @@ def login():
                 hello = "Hi, evening, 晚风吹过好时光..."
             else:
                 hello = "Night, sleep, 带着一天的困倦拥抱明天..."
+            username = usernamex
             print(hello, end = '\n\n\033[0m')
             break
         else:
             print("\n\033[1;31;mLogin Incorrect\n\033[0m")
+            if isForever:
+                continue
+            else:
+                break
 
 def getDirname():
     """Doc:
