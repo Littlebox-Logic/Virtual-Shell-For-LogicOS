@@ -16,10 +16,11 @@
 
 # Type "help"(Case Insensitive) To Get HELP Message.
 
-from os import name, system, chdir, getcwd, mkdir, get_terminal_size
+from os import name, system, chdir, getcwd, mkdir, get_terminal_size, chmod
 from sys import stdin, stderr
 from time import sleep
 from json import load, dump
+from socket import gethostname
 from getpass import getpass
 from hashlib import md5
 from datetime import datetime
@@ -31,9 +32,10 @@ from os.path import exists
 version = "0.2.2021.Release (Colorful Times)"
 
 # Supported Executable Commands (Not Special Commands).
-cmds = {"clear": "Clear Screen.", "exit": "Exit This Program.", "logout": "Exit This Program", "data": "Undefined.", "shift": "Undefined.", "virsual": "Undefined.", "print": "Undefined.", "restart": "Soft-Restart This Program.", "goto": "Undefined.", "tp": "Undefined.", "cd": "Toggle The Working Directory.", "reboot": "Soft-Restart This Program.", "ls": "List The Contents of The Current Directory.", "dir": "List The Contents of The Current Directory.", "cat": "Display The Specified Text File Contents.", "uname": "Display The Virtual Operating System Type.", "pwd": "Display The Current Working Directory.", "tty": "Display The Current Terminal Storage Location.", "wget": "Download Files On The Internet.", "ping": "Test Network Connectivity.", "help": "Display This Help Message.", "exec": "Execute Commands With Default-Shell.", "raise": "Manually Throw A System-Exception."}
+cmds = {"clear": "Clear Screen.", "exit": "Exit This Program.", "logout": "Exit This Program", "data": "Undefined.", "shift": "Undefined.", "virsual": "Undefined.", "print": "Undefined.", "restart": "Soft-Restart This Program.", "goto": "Undefined.", "tp": "Undefined.", "cd": "Toggle The Working Directory.", "reboot": "Soft-Restart This Program.", "ls": "List The Contents of The Current Directory.", "dir": "List The Contents of The Current Directory.", "cat": "Display The Specified Text File Contents.", "uname": "Display The Virtual Operating System Type.", "pwd": "Display The Current Working Directory.", "tty": "Display The Current Terminal Storage Location.", "wget": "Download Files On The Internet.", "ping": "Test Network Connectivity.", "python": "Execute Python Scripts Or Shell.", "do": "Provide A Statement Loop (In \"loop 'times'\" End).", "help": "Display This Help Message.", "exec": "Execute Commands With Default-Shell.", "raise": "Manually Throw A System-Exception."}
 # Emergency Default Usernames And The MD5 Code Of Passwords.
 users = {'logic': '6fad807c0f7e970c379a8b6393e22501', 'administrator': 'd41d8cd98f00b204e9800998ecf8427e'}
+path2py = ''
 
 # Clear Screen.
 if name == 'nt':
@@ -115,11 +117,21 @@ def execute(cmd):
     if cmd == '':
         return ''
     elif cmd[:2] == './':
+        try:
+            chmod(cmd, 0o010)
+        except Exception as reason:
+            return "\033[1;31;mUnable To Get Executable Permissions for \"%s\"\n%s\033[0m\n" % (cmd, reason)
         if username == "root":
             code = system("sudo " + cmd)
+            code /= 256
+            if code > 127:
+                code -= 256
             return "\033[;32;mTransmited Default-Shell Execution Command As Root.\nDefault-Shell Returned \033[1;34;m%d\n\033[0m" % code
         else:
             code = system(cmd)
+            code /= 256
+            if code > 127:
+                code -= 256
             return "\033[;32;mTransmited Default-Shell Execution Command.\nDefault-Shell Returned \033[1;34;m%d\n\033[0m" % code
     unit = ''
     for each in cmd:
@@ -141,6 +153,7 @@ def execute(cmd):
         clear()
         print("LogicOS %s\nKernel- Not Mounted\n\nCopyright (c) 2020-2021 Littlebox.\nAll Rights Reserved.\n" % version)
         login()
+        return "\033[1;32;mType \"help\" To Get Help Message.\n\n\033[0m"
     elif unit == "cd":
         try:
             chdir(cmd[3:])
@@ -197,10 +210,59 @@ def execute(cmd):
     elif unit == 'exec':
         if username == "root":
             code = system("sudo " + cmd[5:])
+            code /= 256
+            if code > 127:
+                code -= 256
             return "\033[;32;mTransmited Default-Shell Execution Command As Root.\nDefault-Shell Returned \033[1;34;m%d\n\033[0m" % code
         else:
             code = system(cmd[5:])
+            code /= 256
+            if code > 127:
+                code -= 256
             return "\033[;32;mTransmited Default-Shell Execution Command.\nDefault-Shell Returned \033[1;34;m%d\n\033[0m" % code
+    elif unit == "python":
+        global path2py
+        if path2py == '':
+            path2py = input("\033[1;;mPython-Interpreter's Path> \033[0m")
+        try:
+            if not exists(path2py):
+                return "\033[1;31;mThe Specified Python-Interpreter Does Not Exist.\n\033[0m"
+        except Exception as reason:
+            return "\033[1;31;mYou Do Not Have Permission To Access The Specified Interpreter.\033[0m\n"
+        try:
+            if username == "root":
+                code = system("sudo %s %s" % (path2py, cmd[7:]))
+            else:
+                code = system("%s %s" % (path2py, cmd[7:]))
+        except:
+            return "\033[1;31;mAn Unknown Error Occurred.\033[0m\n"
+        else:
+            code /= 256
+            if code > 127:
+                code -= 256
+            return "\033[;32;mReturned \033[1;34;m%d\n\033[0m" % code
+    elif (cmd.lower()[:5] == "echo ") or (cmd.lower()[:7] == "printf "):
+        if name == 'posix':
+            system(cmd)
+        else:
+            system("echo %s" % name[4:])
+        return ''
+    elif unit == "do":
+        commands = []
+        while True:
+            command = input("\033[1;34;m> \033[0m")
+            if clearSpace(command[:4]).lower() == "loop":
+                break
+            commands.append(command)
+        if (clearSpace(command).lower() == "loop") or (not clearSpace(command[5:]).lower().isdigit()):
+            return "\033[1;31;mYou Must Provide A Valid Number Of Cycles.\033[0m\n"
+        bars = 0
+        for count in range(int(command[5:])):
+            for each in commands:
+                if each != '':
+                    print(execute(each), end = '')
+                    bars += 1
+        return "\033[1;32;mExecute Command %d Bar(s).\n\033[0m" % bars
     elif unit == "raise":
         if cmd == "raise":
             raise Exception("Exception Thrown By The User.")
@@ -270,7 +332,7 @@ def login():
                 hello = "Hi, evening, 晚风吹过好时光..."
             else:
                 hello = "Night, sleep, 带着一天的困倦拥抱明天..."
-            print(hello, end = ' \033[0m\n\n')
+            print(hello, end = '\n\n\033[0m')
             break
         else:
             print("\n\033[1;31;mLogin Incorrect\n\033[0m")
@@ -295,12 +357,13 @@ if __name__ == '__main__':
     while True:
         try:
             login()
+            print("\033[1;32;mType \"help\" To Get Help Message.\n\033[0m")
             # Simulation Shell.
             while True:
                 if username == "root":
-                    cmd = clearSpace(input("\033[1;;m[%s@localhost %s]# \033[0m" % (username, getDirname())))
+                    cmd = clearSpace(input("\033[1;;m[%s@%s %s]# \033[0m" % (username, gethostname(), getDirname())))
                 else:
-                    cmd = clearSpace(input("\033[1;;m[%s@localhost %s]$ \033[0m" % (username, getDirname())))
+                    cmd = clearSpace(input("\033[1;;m[%s@%s %s]$ \033[0m" % (username, gethostname(), getDirname())))
                 if cmd == '':
                     continue
                 elif (cmd.lower() == "exit") or (cmd.lower() == "logout"):
@@ -316,8 +379,13 @@ if __name__ == '__main__':
                     else:
                         system("echo %s" % name[4:])
                     continue
+                elif clearSpace(cmd).lower()[:4] == "quit":
+                    print("\033[1;31;mEnter \"exit\" Or \"logout\" To Exit.\033[0m")
+                    continue
                 print(execute(cmd), end = '')
         except KeyboardInterrupt:
+            print('\nLogout')
+            sleep(0.5)
             exit(0)
         except Exception as reason:
             clear()
@@ -337,6 +405,6 @@ if __name__ == '__main__':
             stderr.write("Please Send Us Detail Or The Entire Report To Give You A Better Experience.\n\n")
             stderr.write("E-mail: sunjunpeng2007@126.com\n%slittlebox2020@outlook.com\n" % (' ' * 8))
             stderr.write("Phone : +86 170 8537 0312\n\n")
-            input("\033[0mType ENTER To Continue...")
+            input("\033[0mType \033[1;;mENTER\033[0m To Continue...")
             clear()
             print("LogicOS %s\nKernel- Not Mounted\n\nCopyright (c) 2020-2021 Littlebox.\nAll Rights Reserved.\n" % version)
