@@ -29,7 +29,7 @@ from traceback import format_exc
 from os.path import exists
 
 # Global Program Version.
-version = "0.2.2021.Release (Colorful Times)"
+version = "0.2.2021.Release (\033[1;30;mC\033[1;31;mo\033[1;32;ml\033[1;33;mo\033[1;34;mr\033[1;35;mf\033[1;36;mu\033[1;37;ml\033[0m Times)"
 
 # Supported Executable Commands (Not Special Commands).
 cmds = {"clear": "Clear Screen.", "exit": "Exit This Program.", "logout": "Exit This Program", "data": "Undefined.", "shift": "Undefined.", "virsual": "Undefined.", "print": "Undefined.", "restart": "Soft-Restart This Program.", "goto": "Undefined.", "tp": "Undefined.", "cd": "Toggle The Working Directory.", "reboot": "Soft-Restart This Program.", "ls": "List The Contents of The Current Directory.", "dir": "List The Contents of The Current Directory.", "cat": "Display The Specified Text File Contents.", "uname": "Display The Virtual Operating System Type.", "pwd": "Display The Current Working Directory.", "tty": "Display The Current Terminal Storage Location.", "wget": "Download Files On The Internet.", "ping": "Test Network Connectivity.", "python": "Execute Python Scripts Or Shell.", "do": "Provide A Statement Loop (In \"loop 'times'\" End).", "help": "Display This Help Message.", "exec": "Execute Commands With Default-Shell.", "raise": "Manually Throw A System-Exception."}
